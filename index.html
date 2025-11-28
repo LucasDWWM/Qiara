@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S. MARK VII - ULTIMATE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-dark: rgba(0, 243, 255, 0.15);
+            --alert-red: #ff003c;
+            --bg-color: #020408;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at center, #0d1a2b 0%, #000000 80%),
+                linear-gradient(0deg, transparent 24%, rgba(0, 243, 255, .03) 25%, rgba(0, 243, 255, .03) 26%, transparent 27%, transparent 74%, rgba(0, 243, 255, .03) 75%, rgba(0, 243, 255, .03) 76%, transparent 77%, transparent),
+                linear-gradient(90deg, transparent 24%, rgba(0, 243, 255, .03) 25%, rgba(0, 243, 255, .03) 26%, transparent 27%, transparent 74%, rgba(0, 243, 255, .03) 75%, rgba(0, 243, 255, .03) 76%, transparent 77%, transparent);
+            background-size: 50px 50px;
+            color: var(--neon-blue);
+            font-family: 'Rajdhani', sans-serif;
+            height: 100vh; overflow: hidden; margin: 0;
+            display: flex; justify-content: center; align-items: center;
+            user-select: none;
+        }
+
+        /* --- HEADER --- */
+        .hud-header {
+            position: absolute; top: 0; width: 100%; height: 60px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 40px; border-bottom: 1px solid var(--neon-dark);
+            background: linear-gradient(to bottom, rgba(0,20,40,0.9), transparent);
+            z-index: 10;
+        }
+        .header-text { font-family: 'Orbitron'; font-size: 0.9rem; letter-spacing: 2px; }
+
+        /* --- UI ELEMENTS (Sides) --- */
+        .panel {
+            position: absolute; top: 20%; bottom: 20%; width: 280px;
+            display: flex; flex-direction: column; gap: 20px;
+            padding: 20px;
+        }
+        .left-panel { left: 40px; border-left: 2px solid var(--neon-dark); text-align: left; }
+        .right-panel { right: 40px; border-right: 2px solid var(--neon-dark); text-align: right; align-items: flex-end; }
+
+        .widget-title { font-family: 'Orbitron'; font-size: 0.7rem; opacity: 0.8; margin-bottom: 5px; }
+        .bar-container { width: 100%; height: 6px; background: rgba(0, 243, 255, 0.1); overflow: hidden; }
+        .bar-fill { height: 100%; background: var(--neon-blue); width: 0%; animation: loadBar 2s ease-out forwards; }
+        
+        /* LOG CONSOLE (Futuriste mais lisible) */
+        .console-log {
+            height: 300px; width: 100%; overflow-y: auto; 
+            font-family: monospace; font-size: 0.75rem; color: var(--neon-blue);
+            text-shadow: 0 0 5px var(--neon-blue);
+            direction: ltr; text-align: left;
+            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+        }
+        .log-entry { margin-bottom: 5px; animation: fadeIn 0.3s; }
+        .log-error { color: var(--alert-red); text-shadow: 0 0 5px var(--alert-red); }
+
+        /* --- CENTRE : L'INTERFACE JARVIS --- */
+        .center-interface {
+            position: relative; z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        /* Grand cercle rotatif */
+        .arc-reactor-ring {
+            position: absolute; width: 500px; height: 500px; border-radius: 50%;
+            border: 1px dashed rgba(0, 243, 255, 0.2);
+            animation: spin 60s linear infinite; pointer-events: none;
+        }
+        .arc-reactor-ring::before {
+            content: ''; position: absolute; top: -5px; left: 50%; width: 10px; height: 10px;
+            background: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        /* Le Bouton Central (Micro) */
+        .core-button {
+            width: 160px; height: 160px; border-radius: 50%;
+            background: rgba(0, 10, 20, 0.8);
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 40px rgba(0, 243, 255, 0.2), inset 0 0 20px rgba(0, 243, 255, 0.1);
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+            cursor: pointer; transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .core-button:hover { transform: scale(1.05); box-shadow: 0 0 60px rgba(0, 243, 255, 0.4); }
+        
+        /* États du bouton */
+        .core-button.listening { border-color: var(--alert-red); box-shadow: 0 0 50px var(--alert-red), inset 0 0 20px var(--alert-red); }
+        .core-button.thinking { border-color: #ffffff; box-shadow: 0 0 50px #ffffff; animation: pulseWhite 1.5s infinite; }
+
+        /* Les barres audio animées */
+        .audio-wave {
+            width: 10px; height: 30px; background: var(--neon-blue); border-radius: 5px;
+            box-shadow: 0 0 10px var(--neon-blue); transition: 0.2s;
+        }
+
+        .listening .audio-wave { background: var(--alert-red); box-shadow: 0 0 15px var(--alert-red); animation: waveRed 0.6s infinite ease-in-out alternate; }
+        .thinking .audio-wave { background: #ffffff; height: 60px; box-shadow: 0 0 15px #ffffff; animation: waveWhite 0.3s infinite alternate; }
+
+        .audio-wave:nth-child(1) { animation-delay: 0.0s; }
+        .audio-wave:nth-child(2) { animation-delay: 0.1s; }
+        .audio-wave:nth-child(3) { animation-delay: 0.2s; }
+        .audio-wave:nth-child(4) { animation-delay: 0.3s; }
+
+        .status-label { margin-top: 30px; font-family: 'Orbitron'; font-size: 1.2rem; letter-spacing: 4px; text-shadow: 0 0 10px var(--neon-blue); }
+
+        /* ANIMATIONS */
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes loadBar { 0% { width: 0; } 100% { width: 100%; } }
+        @keyframes waveRed { 0% { height: 20px; opacity: 0.7; } 100% { height: 70px; opacity: 1; } }
+        @keyframes waveWhite { 0% { height: 40px; } 100% { height: 90px; } }
+        @keyframes pulseWhite { 0% { box-shadow: 0 0 30px white; } 50% { box-shadow: 0 0 60px white; } 100% { box-shadow: 0 0 30px white; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="hud-header">
+        <span class="header-text">STARK INDUSTRIES // MARK VII</span>
+        <span class="header-text" id="clock">00:00:00</span>
+        <span class="header-text">ONLINE</span>
+    </div>
+
+    <div class="panel left-panel">
+        <div>
+            <div class="widget-title">SYSTEM INTEGRITY</div>
+            <div class="bar-container"><div class="bar-fill" style="width: 98%; animation-delay: 0.2s;"></div></div>
+        </div>
+        <div>
+            <div class="widget-title">MEMORY USAGE</div>
+            <div class="bar-container"><div class="bar-fill" style="width: 45%; animation-delay: 0.5s;"></div></div>
+        </div>
+        <div>
+            <div class="widget-title">NETWORK</div>
+            <div class="bar-container"><div class="bar-fill" style="width: 89%; animation-delay: 0.8s;"></div></div>
+        </div>
+    </div>
+
+    <div class="center-interface">
+        <div class="arc-reactor-ring"></div>
+        
+        <div class="core-button" id="micBtn" onclick="handleInteraction()">
+            <div class="audio-wave"></div>
+            <div class="audio-wave"></div>
+            <div class="audio-wave"></div>
+            <div class="audio-wave"></div>
+        </div>
+        
+        <div class="status-label" id="statusText">INITIALIZE</div>
+    </div>
+
+    <div class="panel right-panel">
+        <div class="widget-title">SYSTEM LOGS</div>
+        <div class="console-log" id="consoleLog">
+            <div class="log-entry">> BOOT SEQUENCE INITIATED...</div>
+            <div class="log-entry">> UI LOADED.</div>
+            <div class="log-entry">> WAITING FOR USER INPUT.</div>
+        </div>
+    </div>
+
+    <script>
+        /* ============================================================
+           🔴🔴 ETAPE CRUCIALE 🔴🔴
+           Remplacez le texte ci-dessous par votre clé API (AIza...)
+        ============================================================ */
+        const API_KEY = "AIzaSyCO6CLbb8GjTZsrxhVFUrFbPut6vejREcE"; 
+        /* ============================================================ */
+
+        const micBtn = document.getElementById('micBtn');
+        const statusText = document.getElementById('statusText');
+        const consoleLog = document.getElementById('consoleLog');
+        
+        // Horloge
+        setInterval(() => { document.getElementById('clock').textContent = new Date().toLocaleTimeString(); }, 1000);
+
+        // --- SETUP AUDIO ---
+        // On vérifie si l'API Speech existe
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isListening = false;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'fr-FR';
+            recognition.continuous = false; // Une seule phrase à la fois pour éviter les coupures
+            recognition.interimResults = false;
+        } else {
+            addLog("ERREUR: Navigateur incompatible. Utilisez Chrome.", true);
+        }
+
+        // --- FONCTION PRINCIPALE (CLIC) ---
+        function handleInteraction() {
+            // 1. Vérif clé
+            if (API_KEY.includes("COLLEZ_VOTRE") || API_KEY.length < 10) {
+                alert("Erreur : Vous avez oublié de mettre votre clé API dans le code !");
+                addLog("ERREUR: Clé API manquante.", true);
+                return;
+            }
+
+            // 2. Vérif Navigateur
+            if (!recognition) {
+                alert("Veuillez utiliser Google Chrome sur PC.");
+                return;
+            }
+
+            if (!isListening) {
+                try {
+                    recognition.start();
+                    addLog("Activation du micro...");
+                } catch (e) {
+                    addLog("Erreur micro: " + e.message, true);
+                }
+            } else {
+                recognition.stop();
+                addLog("Arrêt manuel.");
+            }
+        }
+
+        // --- ÉVÉNEMENTS RECONNAISSANCE ---
+        if (recognition) {
+            recognition.onstart = () => {
+                isListening = true;
+                micBtn.className = "core-button listening"; // Devient ROUGE
+                statusText.innerText = "ECOUTE...";
+                statusText.style.color = "var(--alert-red)";
+                addLog(">> Micro ouvert. Parlez maintenant.");
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                // On ne remet en bleu que si on n'est pas en train de réfléchir
+                if (!micBtn.classList.contains('thinking')) {
+                    micBtn.className = "core-button"; 
+                    statusText.innerText = "STANDBY";
+                    statusText.style.color = "var(--neon-blue)";
+                }
+            };
+
+            recognition.onerror = (event) => {
+                isListening = false;
+                micBtn.className = "core-button";
+                statusText.innerText = "ERREUR";
+                let msg = event.error;
+                if (msg === 'not-allowed') msg = "Autorisation micro refusée.";
+                if (msg === 'no-speech') msg = "Aucune voix détectée.";
+                addLog("ERREUR: " + msg, true);
+            };
+
+            recognition.onresult = async (event) => {
+                const transcript = event.results[0][0].transcript;
+                addLog("VOUS: " + transcript);
+                
+                // Appel à l'IA
+                await askJarvis(transcript);
+            };
+        }
+
+        // --- APPEL GEMINI (IA) ---
+        async function askJarvis(prompt) {
+            // Mode réflexion (Blanc)
+            micBtn.className = "core-button thinking";
+            statusText.innerText = "CALCUL...";
+            statusText.style.color = "white";
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+            const requestBody = {
+                contents: [{
+                    parts: [{ text: "Tu es J.A.R.V.I.S.. Réponds de façon très courte, sarcastique et utile. Prompt: " + prompt }]
+                }]
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+                const data = await response.json();
+
+                if (data.candidates && data.candidates[0].content) {
+                    const reply = data.candidates[0].content.parts[0].text;
+                    addLog("JARVIS: " + reply);
+                    speak(reply);
+                } else {
+                    addLog("Erreur: Pas de réponse de l'IA.", true);
+                    resetUI();
+                }
+
+            } catch (error) {
+                addLog("Erreur Réseau: " + error.message, true);
+                resetUI();
+            }
+        }
+
+        // --- SYNTHÈSE VOCALE ---
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'fr-FR';
+            
+            utterance.onend = () => {
+                resetUI();
+            };
+            
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function resetUI() {
+            micBtn.className = "core-button";
+            statusText.innerText = "STANDBY";
+            statusText.style.color = "var(--neon-blue)";
+        }
+
+        function addLog(msg, isError = false) {
+            const div = document.createElement('div');
+            div.className = isError ? 'log-entry log-error' : 'log-entry';
+            div.innerText = msg;
+            consoleLog.appendChild(div); // Ajoute à la fin
+            consoleLog.scrollTop = consoleLog.scrollHeight; // Scroll automatique
+        }
+    </script>
+</body>
+</html>
