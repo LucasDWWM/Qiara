@@ -165,66 +165,66 @@
         </button>
 
         <div style="margin-top: 15px; border-top: 1px solid #333; padding-top: 10px;">
-            <input type="text" id="backup-input" placeholder="Tapez ici (ex: coeur rouge)..." 
-                   style="width: 70%; padding: 8px; border-radius: 5px; border: none;">
-            
-            <button onclick="sendManualCommand()" 
-                    style="width: 25%; padding: 8px; background: #00ffff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+            <input type="text" id="backup-input" placeholder="Tapez ici (ex: coeur rouge)..."
+                style="width: 70%; padding: 8px; border-radius: 5px; border: none;">
+
+            <button onclick="sendManualCommand()"
+                style="width: 25%; padding: 8px; background: #00ffff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
                 OK
             </button>
         </div>
 
         <div style="margin-top: 20px; border: 1px solid #555; padding: 10px; border-radius: 8px;">
             <h3 style="color: yellow; font-size: 12px; margin: 0;">🛠️ ZONE RÉPARATION</h3>
-            <button onclick="checkAvailableModels()" 
-                    style="margin-top:5px; width: 100%; padding: 8px; background: #ffaa00; color: black; border: none; font-weight: bold; cursor: pointer;">
+            <button onclick="checkAvailableModels()"
+                style="margin-top:5px; width: 100%; padding: 8px; background: #ffaa00; color: black; border: none; font-weight: bold; cursor: pointer;">
                 1. CLIQUER ICI POUR TROUVER LE BON MODÈLE
             </button>
             <p id="model-result" style="color: #fff; font-size: 11px; margin-top: 5px; word-break: break-all;"></p>
         </div>
-        
+
         <script>
             async function checkAvailableModels() {
                 const resultBox = document.getElementById('model-result');
                 resultBox.innerText = "Recherche en cours...";
-                
+
                 // On utilise ta clé définie plus haut
                 try {
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`);
                     const data = await response.json();
-                    
+
                     if (data.error) {
                         resultBox.innerText = "ERREUR CLÉ : " + data.error.message;
                         return;
                     }
-        
+
                     // On filtre pour trouver les modèles qui génèrent du texte
                     const validModels = data.models
                         .filter(m => m.supportedGenerationMethods.includes("generateContent"))
                         .map(m => m.name.replace("models/", "")); // On garde juste le nom court
-        
+
                     console.log("Modèles trouvés :", validModels);
-                    
+
                     if (validModels.length > 0) {
                         resultBox.innerHTML = "✅ MODÈLE TROUVÉ : <br><b style='color:#00ff00; font-size:14px'>" + validModels[0] + "</b><br>(C'est celui-là qu'il faut utiliser !)";
-                        
+
                         // On met à jour la variable globale pour le test immédiat
-                        window.FOUND_MODEL = validModels[0]; 
+                        window.FOUND_MODEL = validModels[0];
                         alert("J'ai trouvé le modèle : " + validModels[0] + "\nJe vais tenter de l'utiliser automatiquement.");
                     } else {
                         resultBox.innerText = "Aucun modèle compatible trouvé pour cette clé.";
                     }
-        
+
                 } catch (e) {
                     resultBox.innerText = "Erreur connexion : " + e.message;
                 }
             }
         </script>
-        
+
         <script>
             function sendManualCommand() {
                 const text = document.getElementById('backup-input').value;
-                if(text) {
+                if (text) {
                     document.getElementById('chat-log').innerText = `Manuel: "${text}"`;
                     processVoiceCommand(text); // On envoie le texte directement à l'IA
                     document.getElementById('backup-input').value = ""; // On vide le champ
@@ -385,15 +385,15 @@
         }
         updateTargets('sphere');
 
- // --- 5. AI & VOICE LOGIC (VERSION CONTINUE) ---
- const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        // --- 5. AI & VOICE LOGIC (VERSION CONTINUE) ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const synth = window.speechSynthesis;
         let recognition;
         let autoRestart = false; // Variable pour forcer le redémarrage
 
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
-            
+
             // ⚠️ C'est ici que ça change tout :
             recognition.continuous = true; // Ne s'arrête pas après une phrase
             recognition.interimResults = false;
@@ -412,7 +412,7 @@
                     console.log("Relance automatique du micro...");
                     try {
                         recognition.start();
-                    } catch(e) {
+                    } catch (e) {
                         console.log("Le micro est déjà actif.");
                     }
                 } else {
@@ -425,18 +425,17 @@
                 console.warn("Erreur reconnaissance vocale :", event.error);
                 if (event.error === 'no-speech') {
                     // Ignore l'erreur "pas de parole" et laisse le restart faire le job
-                    return; 
+                    return;
                 }
             };
 
             recognition.onresult = (event) => {
-                // On prend le dernier résultat (le plus récent)
                 const lastResultIndex = event.results.length - 1;
                 const text = event.results[lastResultIndex][0].transcript.toLowerCase();
-                
+
                 console.log("Entendu :", text);
                 document.getElementById('chat-log').innerText = `Vous: "${text}"`;
-                
+
                 // On envoie à l'IA
                 processVoiceCommand(text);
             };
@@ -479,23 +478,23 @@
             log.innerHTML += `<br><span style="color:#00ffff">IA: "${text}"</span>`;
         }
 
-   
 
-// --- FONCTION IA CORRIGÉE (Modèle Stable) ---
-const GEMINI_API_KEY = "AIzaSyA4SqhMlm6twDBnPBgbAowovGqY1acH3GY";
 
-// --- FONCTION IA FINALE (Modèle Validé) ---
-// ⚠️ Vérifie que la variable GEMINI_API_KEY est bien définie plus haut dans ton code avec ta clé !
+        // --- FONCTION IA CORRIGÉE (Modèle Stable) ---
+        const GEMINI_API_KEY = "XXXX-REPLACE-WITH-YOUR-KEY-XXXXX"; // <-- Mets ta clé ici
 
-async function askGemini(userText) {
-    console.log("Envoi de la demande à Gemini...", userText);
-    
-    // ✅ ON UTILISE LE MODÈLE QUE TU AS TROUVÉ
-    const modelName = "gemini-2.5-flash"; 
-    
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
-    
-    const prompt = `
+        // --- FONCTION IA FINALE (Modèle Validé) ---
+        // ⚠️ Vérifie que la variable GEMINI_API_KEY est bien définie plus haut dans ton code avec ta clé !
+
+        async function askGemini(userText) {
+            console.log("Envoi de la demande à Gemini...", userText);
+
+            // ✅ ON UTILISE LE MODÈLE QUE TU AS TROUVÉ
+            const modelName = "gemini-2.5-flash";
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
+
+            const prompt = `
     Tu es une IA qui contrôle un hologramme 3D.
     Analyse la demande : "${userText}".
     
@@ -509,45 +508,43 @@ async function askGemini(userText) {
     {"shape": "heart", "color": "#ff0000", "speech": "Je fais apparaître un cœur."}
     `;
 
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
-            })
-        });
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            alert("ERREUR : " + errorData.error.message);
-            return null;
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    alert("ERREUR : " + errorData.error.message);
+                    return null;
+                }
+
+                const data = await response.json();
+
+                // Sécurité si l'IA est muette
+                if (!data.candidates || !data.candidates[0].content) {
+                    console.warn("Réponse vide de l'IA");
+                    return null;
+                }
+
+                const textResponse = data.candidates[0].content.parts[0].text;
+
+                // Nettoyage ultime du JSON
+                const cleanJson = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+
+                console.log("Succès ! Réponse IA :", cleanJson);
+                return JSON.parse(cleanJson);
+
+            } catch (error) {
+                console.error("Erreur de traitement :", error);
+
+            }
         }
 
-        const data = await response.json();
-        
-        // Sécurité si l'IA est muette
-        if (!data.candidates || !data.candidates[0].content) {
-            console.warn("Réponse vide de l'IA");
-            return null;
-        }
-
-        const textResponse = data.candidates[0].content.parts[0].text;
-        
-        // Nettoyage ultime du JSON
-        const cleanJson = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-        
-        console.log("Succès ! Réponse IA :", cleanJson);
-        return JSON.parse(cleanJson);
-
-    } catch (error) {
-        console.error("Erreur de traitement :", error);
-        // En cas de pépin, on affiche une sphère rouge pour signaler l'erreur visuellement
-        return { shape: "sphere", color: "#ff0000", speech: "Erreur de lecture de ma réponse." };
-    }
-}
-
-        // Remplacement de ta fonction existante
         async function processVoiceCommand(cmd) {
             document.getElementById('status-text').innerText = "IA : Réflexion...";
 
